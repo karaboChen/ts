@@ -1,12 +1,12 @@
 // composables/useClientTable.ts
 import { ref, computed, type Ref } from 'vue'
 
-interface SortState {
+type SortState = {
   prop: string
   order: 'ascending' | 'descending' | null | string
 }
 
-interface UseClientTableOptions {
+type UseClientTableOptions = {
   defaultPageSize?: number
 }
 

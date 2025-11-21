@@ -4,7 +4,7 @@
       <el-table-column prop="id" label="ID" width="80" sortable="custom" />
 
       <el-table-column prop="name" label="姓名" sortable="custom">
-        <template #default="{ row }"> {{ row.id }} / {{ row.name }} </template>
+        <template #default="{ row }"> {{ row.name }} </template>
       </el-table-column>
 
       <el-table-column prop="date" label="日期" sortable="custom" />
@@ -58,7 +58,7 @@ onMounted(() => {
   for (let i = 0; i < 50; i++) {
     mockList.push({
       id: i + 1,
-      name: `User ${i + 1}`,
+      name: `User${i + 1}`,
       date: `2023-01-${String(Math.floor(Math.random() * 30) + 1).padStart(2, '0')}`,
       amount: Math.floor(Math.random() * 10000),
     })
