@@ -1,68 +1,137 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import { CaretBottom, CaretTop } from '@element-plus/icons-vue'
+
+const tableData = [
+  {
+    date: '2016-05-03',
+  },
+]
+
+// 哪些 row 被展開，用 index 當 key
+const expandedRows = ref<number[]>([])
+
+const isExpanded = (index: number) => expandedRows.value.includes(index)
+
+const toggleExpand = (index: number) => {
+  console.log(index)
+  const i = expandedRows.value.indexOf(index)
+  console.log(i)
+  if (i === -1) {
+    expandedRows.value.push(index) // 展開
+  } else {
+    expandedRows.value.splice(i, 1) // 收合
+  }
+}
+
+// ---- 展開/收合動態高度動畫 ----
+const beforeEnter = (el: Element) => {
+  const elem = el as HTMLElement
+  elem.style.maxHeight = '0'
+  elem.style.overflow = 'hidden'
+}
+
+const enter = (el: Element) => {
+  const elem = el as HTMLElement
+  const h = elem.scrollHeight
+
+  // 先強制 reflow，再改 max-height，才會觸發 transition
+  elem.style.transition = 'max-height 0.5s ease'
+  void elem.offsetHeight
+  elem.style.maxHeight = h + 'px'
+}
+
+const afterEnter = (el: Element) => {
+  const elem = el as HTMLElement
+  // 動畫結束，清掉 inline style，讓內容正常自適應
+  elem.style.maxHeight = ''
+  elem.style.overflow = ''
+  elem.style.transition = ''
+}
+
+const beforeLeave = (el: Element) => {
+  const elem = el as HTMLElement
+  const h = elem.scrollHeight
+  elem.style.maxHeight = h + 'px'
+  elem.style.overflow = 'hidden'
+  elem.style.transition = 'max-height 0.3s ease'
+}
+
+const leave = (el: Element) => {
+  const elem = el as HTMLElement
+  // 往上收合
+  void elem.offsetHeight
+  elem.style.maxHeight = '0'
+}
+
+const afterLeave = (el: Element) => {
+  const elem = el as HTMLElement
+  // 收合完清掉 style
+  elem.style.maxHeight = ''
+  elem.style.overflow = ''
+  elem.style.transition = ''
+}
+</script>
+
 <template>
-  <div class="app-container">
-    <el-table :data="pagedData" style="width: 100%" border @sort-change="handleSortChange">
-      <el-table-column prop="id" label="ID" width="80" sortable="custom" />
+  <el-table
+    class="dark-table"
+    :data="tableData"
+    border
+    style="width: 12%"
+    :header-cell-style="{
+      backgroundColor: 'black', // 抬頭底色
+      color: '#D5D529', // 文字顏色 = 圖片那種亮黃
+      fontWeight: '700', // 讓字看起來更有力
+    }"
+  >
+    <el-table-column prop="date" label="Date" width="180">
+      <template #default="{ row, $index }">
+        <button class="mb-1">上傳圖片</button>
 
-      <el-table-column prop="name" label="姓名" sortable="custom">
-        <template #default="{ row }"> {{ row.name }} </template>
-      </el-table-column>
+        <!-- 第一列 + V 圖示 同一行 -->
+        <div class="first-line">
+          <p class="date-text">{{ row.date }}</p>
+          <el-icon class="caret-icon" @click="toggleExpand($index)">
+            <CaretBottom v-if="!isExpanded($index)" />
+            <CaretTop v-else />
+          </el-icon>
+        </div>
 
-      <el-table-column prop="date" label="日期" sortable="custom" />
-      <el-table-column prop="amount" label="金額" sortable="custom" />
-    </el-table>
-
-    <div style="margin-top: 20px; display: flex; justify-content: flex-end">
-      <el-pagination
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        :page-sizes="[5, 10, 20]"
-        :total="total"
-        layout="total, sizes, prev, pager, next"
-      />
-    </div>
-
-    <button @click="resetData">重置測試資料</button>
-  </div>
+        <!-- 展開內容，使用 JS hook 做 max-height 動畫 -->
+        <transition
+          @before-enter="beforeEnter"
+          @enter="enter"
+          @after-enter="afterEnter"
+          @before-leave="beforeLeave"
+          @leave="leave"
+          @after-leave="afterLeave"
+        >
+          <div v-show="isExpanded($index)">
+            <p v-for="i in 13" :key="i">{{ row.date }}</p>
+          </div>
+        </transition>
+      </template>
+    </el-table-column>
+  </el-table>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useClientTable } from '@/composables/useClientTable' // 引入剛寫好的 hook
-
-// 1. 定義資料型別
-interface UserData {
-  id: number
-  name: string
-  date: string
-  amount: number
+<style>
+body {
+  background-color: black;
 }
 
-// 2. 原始資料
-const allData = ref<UserData[]>([])
-
-// 3. 使用 Composable！只需這一行
-// 解構出 table 需要的所有屬性
-const { pagedData, currentPage, pageSize, total, handleSortChange } = useClientTable(allData, {
-  defaultPageSize: 5,
-})
-
-// --- 以下皆為模擬資料邏輯，與分頁邏輯無關 ---
-
-const resetData = () => {
-  allData.value = [{ id: 1, name: 'User 1', date: '2023-01-01', amount: 1000 }]
+.first-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-onMounted(() => {
-  // 模擬 API 請求
-  const mockList: UserData[] = []
-  for (let i = 0; i < 50; i++) {
-    mockList.push({
-      id: i + 1,
-      name: `User${i + 1}`,
-      date: `2023-01-${String(Math.floor(Math.random() * 30) + 1).padStart(2, '0')}`,
-      amount: Math.floor(Math.random() * 10000),
-    })
-  }
-  allData.value = mockList
-})
-</script>
+.date-text {
+  margin: 0;
+}
+
+.caret-icon {
+  cursor: pointer;
+}
+</style>
