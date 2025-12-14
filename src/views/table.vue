@@ -4,7 +4,9 @@
       <el-table-column prop="id" label="ID" width="80" sortable="custom" />
 
       <el-table-column prop="name" label="姓名" sortable="custom">
-        <template #default="{ row }"> {{ row.name }} </template>
+        <template #default="row">
+          {{ row }}
+        </template>
       </el-table-column>
 
       <el-table-column prop="date" label="日期" sortable="custom" />
@@ -30,7 +32,7 @@ import { ref, onMounted } from 'vue'
 import { useClientTable } from '@/composables/useClientTable' // 引入剛寫好的 hook
 
 // 1. 定義資料型別
-interface UserData {
+type UserData = {
   id: number
   name: string
   date: string
